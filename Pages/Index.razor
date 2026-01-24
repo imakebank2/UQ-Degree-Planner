@@ -1,0 +1,40 @@
+﻿@page "/"
+
+<PageTitle>UQ Degree Planner</PageTitle>
+
+<h2>Welcome to the UQ (University of Queensland) Degree Planner!</h2>
+<p>Gives you peace of mind that your UQ degree stays on track (no guarantees 💀). Only for bachelor degrees (since every single degree would be way more work).</p>
+
+<div style="display: flex; margin: 2rem, 2rem; gap: 2rem; justify-content: left;">
+
+    <!-- Number of semesters input -->
+    <div>
+        <label for="semesterCount">Number of semesters</label>
+        <input type="number"
+                    id="semesterCount"
+                    @bind="numberOfSemesters"
+                    class="form-control"
+                    style="width: 120px;"
+                    min=@SemesterLimits.Min
+                    max=@SemesterLimits.Max />
+    </div>
+
+    <!-- Number of courses per semester input -->
+    <div>
+        <label for="courseCount">Courses per semester</label>
+        <input type="number"
+                    id="courseCount"
+                    @bind="numberOfCourses"
+                    class="form-control"
+                    style="width: 120px;"
+                    min=@CoursePerSemesterLimits.Min
+                    max=@CoursePerSemesterLimits.Max />
+    </div>
+
+
+    
+
+</div>
+
+
+
