@@ -1,12 +1,14 @@
+using System.Net.Http.Json;
+
 namespace UQDegreePlanner.Pages;
 public partial class Index
 {
     public static class SemesterLimits
     {
-    public const int Min = 1;
-    public const int Max = 10;
+        public const int Min = 1;
+        public const int Max = 20;
     }
-    private int _numberOfSemesters = SemesterLimits.Min;
+    
     private int numberOfSemesters
     {
         get => _numberOfSemesters;
@@ -16,13 +18,19 @@ public partial class Index
     public static class CoursePerSemesterLimits
     {
         public const int Min = 1;
-        public const int Max = 5;
+        public const int Max = 10;
     }
 
-    private int _numberOfCourses = 4;
+    
     private int numberOfCourses
     {
         get => _numberOfCourses;
         set => _numberOfCourses = Math.Clamp(value, CoursePerSemesterLimits.Min, CoursePerSemesterLimits.Max);
     } 
+
+    public async Task<List<string>> getProgramList()
+    {
+        var program = await Http.GetFromJsonAsync<List<string>>("degrees.json");
+        return program;
+    }  
 }

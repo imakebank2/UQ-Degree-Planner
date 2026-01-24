@@ -1,40 +1,94 @@
 ﻿@page "/"
+@using Microsoft.VisualBasic
+
+@inject HttpClient Http
 
 <PageTitle>UQ Degree Planner</PageTitle>
 
 <h2>Welcome to the UQ (University of Queensland) Degree Planner!</h2>
 <p>Gives you peace of mind that your UQ degree stays on track (no guarantees 💀). Only for bachelor degrees (since every single degree would be way more work).</p>
 
-<div style="display: flex; margin: 2rem, 2rem; gap: 2rem; justify-content: left;">
 
-    <!-- Number of semesters input -->
-    <div>
-        <label for="semesterCount">Number of semesters</label>
-        <input type="number"
-                    id="semesterCount"
-                    @bind="numberOfSemesters"
-                    class="form-control"
-                    style="width: 120px;"
-                    min=@SemesterLimits.Min
-                    max=@SemesterLimits.Max />
-    </div>
-
-    <!-- Number of courses per semester input -->
-    <div>
-        <label for="courseCount">Courses per semester</label>
-        <input type="number"
-                    id="courseCount"
-                    @bind="numberOfCourses"
-                    class="form-control"
-                    style="width: 120px;"
-                    min=@CoursePerSemesterLimits.Min
-                    max=@CoursePerSemesterLimits.Max />
-    </div>
+<MudStack Direction="Row" 
+        Justify="Justify.FlexStart"
+        Style="flex-direction: row !important; max-width: 1000px; margin-bottom: 20px;">
 
 
+    <MudNumericField 
+        T="int"
+        Label="Number of semesters"
+        @bind-Value="numberOfSemesters"
+        Min="@SemesterLimits.Min"
+        Max="@SemesterLimits.Max"
+        Style="@($"width: {numericFieldWidth}px;")" 
+    />
+
+    <MudNumericField 
+        T="int"
+        Label="Courses per semester"
+        @bind-Value="numberOfCourses"
+        Min="@CoursePerSemesterLimits.Min"
+        Max="@CoursePerSemesterLimits.Max"
+        Style="@($"width: {numericFieldWidth}px;")" 
+    />
+
+    <!-- Program Dropdown -->
+    <MudAutocomplete 
+        T="string"
+        Label="Search for your program"
+        SearchFunc="DropdownSearchFunc"
+        Clearable="true" 
+        ValueChanged="OnValueChanged"
+    />
+</MudStack>
+
+@if (currentProgram is null) {
+    <h3>Please select a program</h3>
+} else {
+    <h3>Current Program: @currentProgram</h3>
+    <p>Program requirements: hardest part and i havent done it sooooooo sucked in</p>
+    <iframe width="1055" height="594" src="https://www.youtube.com/embed/dQw4w9WgXcQ?list=RDdQw4w9WgXcQ&autoplay=1" title="Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    <p>sorry :)</p>
+<p>Idk if I want to continue this project tbh. I've learnt a ton from this so this has still been productive. Should I just make this a rickroll website or like</p>
+}
+
+
+@code {
     
+    const int numericFieldWidth = 200;
+    private int _numberOfSemesters = SemesterLimits.Min;
+    private int _numberOfCourses = 4;
+    private List<string>? programList { get; set; }
+    private string? currentProgram;
+    protected override async Task OnInitializedAsync()
+    {
+        programList = await getProgramList();
+    }
 
-</div>
+    // Idk what this does lol
+    private Task<IEnumerable<string>> DropdownSearchFunc(string value, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(programList.AsEnumerable());
+
+        return Task.FromResult(
+            programList.Where(x =>
+                x.Contains(value, StringComparison.OrdinalIgnoreCase))
+        );
+    }
+
+    private void OnValueChanged(string newValue)
+    {
+        if (newValue is not null) {
+            currentProgram = newValue;
+        }
+    }
+}
+
+
+
+
+
 
 
 
