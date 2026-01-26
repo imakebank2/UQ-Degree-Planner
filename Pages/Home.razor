@@ -1,0 +1,206 @@
+﻿@page "/"
+@using System.ComponentModel.DataAnnotations
+
+
+<PageTitle>UQ Degree Planner</PageTitle>
+
+<MudText Typo="Typo.h2">Welcome to the degree planner!</MudText>
+<MudText Typo="Typo.body1">Make sure that you meet your course requirements for your degree. Gives you peace of mind that your degree stays on track (no guarantees 💀). Made with UQ programs in mind.</MudText>
+
+<MudStack Direction="Row" 
+        Justify="Justify.FlexStart"
+        Style="flex-direction: row !important; max-width: 1000px; margin: 1.5rem;">
+
+    <MudNumericField 
+        T="int"
+        Label="Number of semesters"
+        @bind-Value="NumberOfSemesters"
+        Min="@Limits.MinSemesters"
+        Max="@Limits.MaxSemesters"
+        Style="@($"width: {Limits.MaxNumericFieldWidthInPixels}px;")" 
+    />
+
+    <MudNumericField 
+        T="int"
+        Label="Courses per semester"
+        @bind-Value="NumberOfCourses"
+        Min="@Limits.MinCoursesPerSemester"
+        Max="@Limits.MaxCoursesPerSemester"
+        Style="@($"width: {Limits.MaxNumericFieldWidthInPixels}px;")" 
+    />
+
+    @* Degree name doesn't matter *@
+    <MudTextField 
+        @bind-Value="DegreeName" 
+        Label="Degree name" 
+        Immediate="true"
+        MaxLength="@Limits.MaxCharacterLength"
+    />
+</MudStack>
+
+<MudText Typo="Typo.h3">My degree: @DegreeName</MudText>
+
+<MudPaper Style="max-width:1000px; margin-top:20px; padding:20px;">
+
+    <MudForm @ref="form"
+         Model="@customCourse"
+         @bind-IsValid="@success">
+
+        <MudText Typo="Typo.subtitle1" Class="mb-3">
+        Add any amount of courses:
+        </MudText>
+
+        <MudTextField @bind-Value="customCourse.CourseName"
+                    Label="Course Name"
+                    Required="true"
+                    For="@(() => customCourse.CourseName)"
+                    MaxLength="@Limits.MaxCharacterLength" />
+
+        <MudTextField T="string"
+              @bind-Value="customCourse.CourseCode"
+              Label="Course Code (must be unique)"
+              Required="true"
+              For="@(() => customCourse.CourseCode)"
+              MaxLength="@Limits.MaxCharacterLength"
+              Validation="@( (Func<string, string>)(code =>
+                {
+                    if (!customCourse.IsCodeUnique(Courses))
+                        return "Course code must be unique";
+
+                    return null;
+                }) )"
+ />
+
+
+        <MudTextField @bind-Value="customCourse.PrequisiteInput"
+                    Label="Prerequisites (course codes separated by commas, e.g. MATH1051,MATH1052)"
+                    Required="false"
+                    For="@(() => customCourse.PrequisiteInput)"
+                    MaxLength="@Limits.MaxCharacterLength"/>
+
+        <MudTextField @bind-Value="customCourse.CorequisiteInput"
+                    Label="Corequisities (course codes separated by commas, e.g. MATH1051,MATH1052)"
+                    Required="false"
+                    For="@(() => customCourse.CorequisiteInput)" 
+                    MaxLength="@Limits.MaxCharacterLength" />
+                    
+        <MudTextField @bind-Value="customCourse.IncompatibilityInput"
+                    Label="Incompatibilities (course codes separated by commas, e.g. MATH1051,MATH1052)"
+                    Required="false"
+                    For="@(() => customCourse.IncompatibilityInput)"
+                    MaxLength="@Limits.MaxCharacterLength" />
+
+        <MudTextField @bind-Value="customCourse.Level"
+                    Label="Level (it is the first digit of the official course code)"
+                    Required="true"
+                    InputType="InputType.Number"
+                    For="@(() => customCourse.Level)" />
+
+        <MudCheckBox @bind-Value="customCourse.IsRequired" Label="Is taking your course required to graduate?" Color="Color.Primary" Class="mt-3" />
+
+        <MudButton ButtonType="ButtonType.Button"
+           Color="Color.Primary"
+           Variant="Variant.Filled"
+           @onclick="AddCourse"
+           Disabled="@(!success)">
+                Add Course
+        </MudButton>
+
+    </MudForm>
+
+    @* @if (submitted)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-4">
+            Course added!
+        </MudAlert>
+    }  *@
+</MudPaper>
+
+<p>CourseList: @string.Join(",",Courses.Select(c => c.CourseCode))</p>
+
+
+@code {
+    private bool success;
+    private void AddCourse()
+    {
+        formSubmitted = true;
+        Courses.Add(customCourse);
+
+        // Creates a new Course object so multiple courses can be created
+        customCourse = new Course();
+    }
+    
+
+    private MudForm form;
+    private bool formSubmitted;
+
+    private Course customCourse = new Course();
+    private int NumberOfSemesters {set; get;} = Limits.MinSemesters;
+    private int NumberOfCourses {set; get;} = 4;
+    private string DegreeName {set; get;} = "My Degree";
+    private List<Course> Courses {set; get;} = new List<Course>();
+
+    public class Course {
+
+        [Required]
+        private string courseCode {set; get;} = string.Empty;
+
+        public string CourseCode {
+            set { courseCode = value.ToUpper().Replace(" ", ""); }
+            get => courseCode;
+        }
+
+        [Required]
+        public string CourseName {get; set;} = "New Course";
+
+        private List<Course> Prerequisites = new List<Course>();
+        private List<Course> Corequisites = new List<Course>();
+
+        private List<Course> Incompatibilities = new List<Course>();
+
+        [Range(1, 9)]
+        public int Level {set; get;} = 1;
+
+        [Required]
+        public Boolean IsRequired {set; get;} = true;
+        public const int Units = 2;
+
+        public string PrequisiteInput {
+            get => FormatCourses(Prerequisites);
+            set => Prerequisites = ParseCourses(value);
+        }
+
+        public string CorequisiteInput {
+            get => FormatCourses(Corequisites);
+            set => Corequisites = ParseCourses(value);
+        }
+
+        public string IncompatibilityInput {
+            get => FormatCourses(Incompatibilities);
+            set => Incompatibilities = ParseCourses(value);
+        }
+
+        // Parses a comma-separated list of course codes into a list of Course objects
+        private static List<Course> ParseCourses(string input) {
+            return input
+                .ToUpper()
+                .Replace(" ", "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(code => new Course { CourseCode = code })
+                .ToList();
+        }
+
+        // Formats a list of Course objects into a comma-separated list of course codes
+        private static string FormatCourses(List<Course> courses) => string.Join(", ", courses.Select(c => c.CourseCode)); 
+        
+        public bool IsCodeUnique(List<Course> existingCourses) {
+            return !existingCourses.Any(c => c.CourseCode == this.CourseCode);
+        }
+    }
+}
+
+
+
+
+
+
