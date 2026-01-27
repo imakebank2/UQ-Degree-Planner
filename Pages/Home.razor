@@ -1,11 +1,17 @@
 ﻿@page "/"
 @using System.ComponentModel.DataAnnotations
+@using UQDegreePlanner.Pages
 
 
 <PageTitle>UQ Degree Planner</PageTitle>
 
 <MudText Typo="Typo.h2">Welcome to the degree planner!</MudText>
 <MudText Typo="Typo.body1">Make sure that you meet your course requirements for your degree. Gives you peace of mind that your degree stays on track (no guarantees 💀). Made with UQ programs in mind.</MudText>
+<MudText Typo="Typo.body2"><li>Program - Qualification you are working toward. Can include multiple degrees (e.g. Bachelors of Computer Science / Science [my program 🙂]) </li>
+<li>Degrees - Qualification within a program (e.g. Computer Science + Science) </li>
+<li>Plans - Pathway within a degree (e.g. Major in applied mathematics + Minor in bioinformatics in Bachelor of Science & None in Bachelor of Computer Science) </li>
+<li>Courses - Subject within a plan (e.g. CSSE1001)</li>
+</MudText>
 
 <MudStack Direction="Row" 
         Justify="Justify.FlexStart"
@@ -31,41 +37,141 @@
 
     @* Degree name doesn't matter *@
     <MudTextField 
-        @bind-Value="DegreeName" 
-        Label="Degree name" 
+        @bind-Value="program.Name" 
+        Label="Program name" 
         Immediate="true"
         MaxLength="@Limits.MaxCharacterLength"
     />
 </MudStack>
 
-<MudText Typo="Typo.h3">My degree: @DegreeName</MudText>
+<MudText Typo="Typo.h3">My program: @program.Name</MudText>
 
-<MudPaper Style="max-width:1000px; margin-top:20px; padding:20px;">
+@* Degrees *@
+<MudPaper Style=@Form.FormStyle>
 
-    <MudForm @ref="form"
-         Model="@customCourse"
-         @bind-IsValid="@success">
+    <MudForm
+         Model="@customDegree"
+         @bind-IsValid="@degreeForm.Success">
 
         <MudText Typo="Typo.subtitle1" Class="mb-3">
-        Add any amount of courses:
+        Add any amount of degrees:
         </MudText>
 
-        <MudTextField @bind-Value="customCourse.CourseName"
+        <MudTextField T="string"
+            @bind-Value="customDegree.Name"
+            Label="Degree Name"
+            Required="true"
+            For="@(() => customDegree.Name)"
+            MaxLength="@Limits.MaxCharacterLength" 
+            Validation="@( (Func<string, string>)(name =>
+                {
+                    if (!IsUniqueInList(program.GetAllDegrees(), name, d => d.Name))
+                        return "Name must be unique";
+                    else if (string.IsNullOrWhiteSpace(name))
+                        return "Name is required";
+
+                    return null;
+                }) )" />
+
+        <MudTextField @bind-Value="customDegree.UnitsRequired"
+                    Label="Units required for the degree"
+                    Required="true"
+                    InputType="InputType.Number"
+                    For="@(() => customDegree.UnitsRequired)" />
+
+        <MudButton ButtonType="ButtonType.Button"
+           Color="Color.Primary"
+           Variant="Variant.Filled"
+           @onclick="AddDegree"
+           Disabled="@(!degreeForm.Success)">
+                Add Degree
+        </MudButton>
+
+    </MudForm>
+</MudPaper>
+
+
+@* Plans *@
+<MudPaper Style=@Form.FormStyle>
+
+    <MudForm
+         Model="@customPlan"
+         @bind-IsValid="@planForm.Success">
+
+        <MudText Typo="Typo.subtitle1" Class="mb-3">
+        Add any amount of plans:
+        </MudText>
+
+        <MudTextField T="string"
+            @bind-Value="customPlan.Name"
+            Label="Plan Name"
+            Required="true"
+            For="@(() => customPlan.Name)"
+            MaxLength="@Limits.MaxCharacterLength" 
+            Validation="@( (Func<string, string>)(name =>
+                {
+                    if (!IsUniqueInList(program.GetAllPlans(), name, p => p.Name))
+                        return "Name must be unique";
+                    else if (string.IsNullOrWhiteSpace(name))
+                        return "Name is required";
+
+                    return null;
+                }) )" />
+
+        <MudSelect @bind-Value="customPlan.Type" Label="Select plan type" Placeholder="Please select">
+            <MudSelectItem Value="@Plan.PlanType.Major">Major (8 units of courses level 3 or higher)</MudSelectItem>
+            <MudSelectItem Value="@Plan.PlanType.Minor">Minor (4 units of courses at level 2 or higher)</MudSelectItem>
+            <MudSelectItem Value="@Plan.PlanType.ExtendedMajor">Extended Major (12 units of courses at level 3 or higher)</MudSelectItem>
+            <MudSelectItem Value="@Plan.PlanType.None">None (No specific requirements / for electives)</MudSelectItem>
+        </MudSelect>
+
+        <MudSelect @bind-Value="customPlan.DegreeFrom" Label="Which degree is this plan in?" Placeholder="Please Select" Required="true">
+            @foreach (Degree degree in program.GetAllDegrees()) {
+                <MudSelectItem Value="@degree">@degree.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudButton ButtonType="ButtonType.Button"
+           Color="Color.Primary"
+           Variant="Variant.Filled"
+           @onclick="AddPlan"
+           Disabled="@(!planForm.Success)">
+                Add Plan
+        </MudButton>
+
+
+    </MudForm>
+</MudPaper>
+
+@* Courses *@
+<MudPaper Style=@Form.FormStyle>
+
+    <MudForm
+         Model="@customCourse"
+         @bind-IsValid="@courseForm.Success">
+
+        <MudText Typo="Typo.subtitle1" Class="mb-3">
+        Add any amount of courses (each course is 2 units [I AM NOT making multi-semester courses]):
+        </MudText>
+
+        <MudTextField @bind-Value="customCourse.Name"
                     Label="Course Name"
                     Required="true"
-                    For="@(() => customCourse.CourseName)"
+                    For="@(() => customCourse.Name)"
                     MaxLength="@Limits.MaxCharacterLength" />
 
         <MudTextField T="string"
               @bind-Value="customCourse.CourseCode"
-              Label="Course Code (must be unique)"
+              Label="Course Code"
               Required="true"
               For="@(() => customCourse.CourseCode)"
               MaxLength="@Limits.MaxCharacterLength"
               Validation="@( (Func<string, string>)(code =>
                 {
-                    if (!customCourse.IsCodeUnique(Courses))
+                    if (!IsUniqueInList(program.GetAllCourses(), code, c => c.CourseCode))
                         return "Course code must be unique";
+                    else if (string.IsNullOrWhiteSpace(code))
+                        return "Course code is required";
 
                     return null;
                 }) )"
@@ -96,111 +202,77 @@
                     InputType="InputType.Number"
                     For="@(() => customCourse.Level)" />
 
-        <MudCheckBox @bind-Value="customCourse.IsRequired" Label="Is taking your course required to graduate?" Color="Color.Primary" Class="mt-3" />
+        <MudCheckBox @bind-Value="customCourse.IsRequired" Label="Is taking your course strictly required to graduate?" Color="Color.Primary" Class="mt-3" />
+
+        <MudSelect @bind-Value="customCourse.PlanFrom" Label="Which plan is this course in?" Placeholder="Please Select" Required="true">
+            @foreach (Plan plan in program.GetAllPlans()) {
+                <MudSelectItem Value="@plan">@plan.Name</MudSelectItem>
+            }
+        </MudSelect>
 
         <MudButton ButtonType="ButtonType.Button"
            Color="Color.Primary"
            Variant="Variant.Filled"
            @onclick="AddCourse"
-           Disabled="@(!success)">
+           Disabled="@(!courseForm.Success)">
                 Add Course
         </MudButton>
 
     </MudForm>
-
-    @* @if (submitted)
-    {
-        <MudAlert Severity="Severity.Success" Class="mt-4">
-            Course added!
-        </MudAlert>
-    }  *@
 </MudPaper>
 
-<p>CourseList: @string.Join(",",Courses.Select(c => c.CourseCode))</p>
-
+<p>CourseList: @string.Join(",",program.GetAllCourses().Select(c => c.CourseCode))</p>
+<p>Haven't added the logic yet but its been so much work bruh</p>
 
 @code {
-    private bool success;
-    private void AddCourse()
-    {
-        formSubmitted = true;
-        Courses.Add(customCourse);
 
-        // Creates a new Course object so multiple courses can be created
-        customCourse = new Course();
+    // Used for form UI
+    public class Form {
+        public const string FormStyle = "max-width:800px; margin-top:20px; padding:20px;"; // Style=@formStyle
+        public bool Success {set; get; } = false;
     }
     
+    private Form degreeForm = new Form();
+    private Form planForm = new Form();
+    private Form courseForm = new Form();
 
-    private MudForm form;
-    private bool formSubmitted;
+    // Structure: one Program -> listOfDegrees -> listofPlans --> listofCourses
 
+    // Only ONE program instance
+    private Program program = new Program();
+    private Degree customDegree = new Degree();
+    private Plan customPlan = new Plan();
     private Course customCourse = new Course();
     private int NumberOfSemesters {set; get;} = Limits.MinSemesters;
     private int NumberOfCourses {set; get;} = 4;
-    private string DegreeName {set; get;} = "My Degree";
     private List<Course> Courses {set; get;} = new List<Course>();
 
-    public class Course {
-
-        [Required]
-        private string courseCode {set; get;} = string.Empty;
-
-        public string CourseCode {
-            set { courseCode = value.ToUpper().Replace(" ", ""); }
-            get => courseCode;
-        }
-
-        [Required]
-        public string CourseName {get; set;} = "New Course";
-
-        private List<Course> Prerequisites = new List<Course>();
-        private List<Course> Corequisites = new List<Course>();
-
-        private List<Course> Incompatibilities = new List<Course>();
-
-        [Range(1, 9)]
-        public int Level {set; get;} = 1;
-
-        [Required]
-        public Boolean IsRequired {set; get;} = true;
-        public const int Units = 2;
-
-        public string PrequisiteInput {
-            get => FormatCourses(Prerequisites);
-            set => Prerequisites = ParseCourses(value);
-        }
-
-        public string CorequisiteInput {
-            get => FormatCourses(Corequisites);
-            set => Corequisites = ParseCourses(value);
-        }
-
-        public string IncompatibilityInput {
-            get => FormatCourses(Incompatibilities);
-            set => Incompatibilities = ParseCourses(value);
-        }
-
-        // Parses a comma-separated list of course codes into a list of Course objects
-        private static List<Course> ParseCourses(string input) {
-            return input
-                .ToUpper()
-                .Replace(" ", "")
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(code => new Course { CourseCode = code })
-                .ToList();
-        }
-
-        // Formats a list of Course objects into a comma-separated list of course codes
-        private static string FormatCourses(List<Course> courses) => string.Join(", ", courses.Select(c => c.CourseCode)); 
+    private void AddDegree() {
+        customDegree.ProgramFrom = program;
         
-        public bool IsCodeUnique(List<Course> existingCourses) {
-            return !existingCourses.Any(c => c.CourseCode == this.CourseCode);
+        if (customDegree.Name != string.Empty) { // <- don't delete this. the form is buggy
+            program.Degrees.Add(customDegree);
         }
+
+        // Reset
+        customDegree = new Degree();
+    }
+
+    private void AddPlan() {
+
+        if (customPlan.Name != string.Empty) { // <- don't delete this. the form is buggy
+            customPlan.DegreeFrom.Plans.Add(customPlan);
+        }
+
+        customPlan = new Plan();
+    }
+
+    private void AddCourse() {
+
+        if (customCourse.CourseCode != string.Empty) { // <- don't delete this. the form is buggy
+            customCourse.PlanFrom.Courses.Add(customCourse);
+        }
+
+        customCourse = new Course();
     }
 }
-
-
-
-
-
-
