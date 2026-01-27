@@ -142,15 +142,16 @@ public partial class Home
         }
 
         // Formats a list of Course objects into a comma-separated list of course codes
-        private static string FormatCourses(List<Course> courses) => string.Join(", ", courses.Select(c => c.CourseCode)); 
-        }
-        
-        public static bool IsUniqueInList<T>(List<T> list, string value, Func<T, string> selector)   
-        {
-            // ignores case
-            return !list.Any(item =>
-            string.Equals(selector(item), value, StringComparison.OrdinalIgnoreCase));
-        }
+        private static string FormatCourses(List<Course> courses) => 
+        string.Join(", ", courses.Select(c => c.CourseCode)); 
+    }
+    
+    public static bool IsUniqueInList<T>(List<T> list, string value, Func<T, string> selector)   
+    {
+        // ignores case
+        return !list.Any(item =>
+        string.Equals(selector(item), value, StringComparison.OrdinalIgnoreCase));
+    }
 
     public static class Limits
     {
