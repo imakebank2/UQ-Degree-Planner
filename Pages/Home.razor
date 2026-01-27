@@ -13,7 +13,7 @@
 <li>Courses - Subject within a plan (e.g. CSSE1001)</li>
 </MudText>
 
-<MudStack Direction="Row" 
+<MudStack "Row"="true" 
         Justify="Justify.FlexStart"
         Style="flex-direction: row !important; max-width: 1000px; margin: 1.5rem;">
 
@@ -63,14 +63,15 @@
             Required="true"
             For="@(() => customDegree.Name)"
             MaxLength="@Limits.MaxCharacterLength" 
-            Validation="@( (Func<string, string>)(name =>
+            Validation="@( (Func<string, string?>)(name =>
                 {
                     if (!IsUniqueInList(program.GetAllDegrees(), name, d => d.Name))
                         return "Name must be unique";
                     else if (string.IsNullOrWhiteSpace(name))
                         return "Name is required";
 
-                    return null;
+                return null;
+
                 }) )" />
 
         <MudTextField @bind-Value="customDegree.UnitsRequired"
@@ -108,14 +109,15 @@
             Required="true"
             For="@(() => customPlan.Name)"
             MaxLength="@Limits.MaxCharacterLength" 
-            Validation="@( (Func<string, string>)(name =>
+            Validation="@( (Func<string, string?>)(name =>
                 {
                     if (!IsUniqueInList(program.GetAllPlans(), name, p => p.Name))
                         return "Name must be unique";
                     else if (string.IsNullOrWhiteSpace(name))
                         return "Name is required";
 
-                    return null;
+                return null;
+
                 }) )" />
 
         <MudSelect @bind-Value="customPlan.Type" Label="Select plan type" Placeholder="Please select">
@@ -166,14 +168,15 @@
               Required="true"
               For="@(() => customCourse.CourseCode)"
               MaxLength="@Limits.MaxCharacterLength"
-              Validation="@( (Func<string, string>)(code =>
+              Validation="@( (Func<string, string?>)(code =>
                 {
                     if (!IsUniqueInList(program.GetAllCourses(), code, c => c.CourseCode))
                         return "Course code must be unique";
                     else if (string.IsNullOrWhiteSpace(code))
                         return "Course code is required";
 
-                    return null;
+                return null;
+
                 }) )"
  />
 
@@ -261,7 +264,7 @@
     private void AddPlan() {
 
         if (customPlan.Name != string.Empty) { // <- don't delete this. the form is buggy
-            customPlan.DegreeFrom.Plans.Add(customPlan);
+            customPlan.DegreeFrom!.Plans.Add(customPlan);
         }
 
         customPlan = new Plan();
@@ -270,7 +273,7 @@
     private void AddCourse() {
 
         if (customCourse.CourseCode != string.Empty) { // <- don't delete this. the form is buggy
-            customCourse.PlanFrom.Courses.Add(customCourse);
+            customCourse.PlanFrom!.Courses.Add(customCourse);
         }
 
         customCourse = new Course();

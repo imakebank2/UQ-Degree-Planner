@@ -40,7 +40,7 @@ public partial class Home
         {
             // A degree meets its requirements if all its plans meet their requirements
             // AND all meets minimum units required for degree
-            return Plans.All(plan => plan.MeetsRequirements()) && Plans.Sum(plan => plan.TotalUnits()) >= UnitsRequired;
+            return Plans.All(plan => plan.MeetsRequirements()) && Plans.Sum(plan => plan.TotalCourseUnits()) >= UnitsRequired;
         }
     }
 
@@ -63,36 +63,31 @@ public partial class Home
             // major: 16 units must include 8 units of courses level 3 or higher
             // extended major 24 units must contain 12 units of courses at level 3 or higher
             // minor: 8 units must contain 4 units of courses at level 2 or higher
-            
-            int totalUnits = Courses.Count * Course.Units;
 
-            if (Type == PlanType.Major)
+            switch (Type)
             {
-                int level3OrHigherUnits = Courses.Where(c => c.Level >= 3).Count() * Course.Units;
-                return level3OrHigherUnits >= 8 && totalUnits >= 16;
-            }
-            else if (Type == PlanType.ExtendedMajor)
-            {
-                int level3OrHigherUnits = Courses.Where(c => c.Level >= 3).Count() * Course.Units;
-                return level3OrHigherUnits >= 12 && totalUnits >= 24;
-            }
-            else if (Type == PlanType.Minor)
-            {
-                int level2OrHigherUnits = Courses.Where(c => c.Level >= 2).Count() * Course.Units;
-                return level2OrHigherUnits >= 4 && totalUnits >= 8;
-            } 
-            else 
-            {
-                // If TYPE == PlanType.None: 
-                return true; // No specific requirements for unspecified plan types
+                case PlanType.Major:
+                    return CourseUnitsAtOrAboveLevel(3) >= 8 && TotalCourseUnits() >= 16;
+            
+                case PlanType.ExtendedMajor:
+                    return CourseUnitsAtOrAboveLevel(3) >= 12 && TotalCourseUnits() >= 24;
+            
+                case PlanType.Minor:
+                    return CourseUnitsAtOrAboveLevel(2) >= 4 && TotalCourseUnits() >= 8;
+
+                case PlanType.None:
+                    return true; // No specific requirements for unspecified plan types
+                
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(Type), $"Unknown plan type: {Type}");
             }
         }
         
-        public int TotalUnits()
-        {
-            return Courses.Count * Course.Units;
-        }
-    }
+        public int TotalCourseUnits() => Courses.Count * Course.Units;
+
+        private int CourseUnitsAtOrAboveLevel(int level) =>
+            Courses.Count(course => course.Level >= level) * Course.Units;
+    } 
 
     public class Course 
     {
