@@ -60,24 +60,26 @@ public partial class Home
 
         public bool MeetsRequirements()
         {
-            // major must include 8 units of courses level 3 or higher
-            // extended major must contain 12 units of courses at level 3 or higher
-            // minor must contain 4 units of courses at level 2 or higher
+            // major: 16 units must include 8 units of courses level 3 or higher
+            // extended major 24 units must contain 12 units of courses at level 3 or higher
+            // minor: 8 units must contain 4 units of courses at level 2 or higher
             
+            int totalUnits = Courses.Count * Course.Units;
+
             if (Type == PlanType.Major)
             {
                 int level3OrHigherUnits = Courses.Where(c => c.Level >= 3).Count() * Course.Units;
-                return level3OrHigherUnits >= 8;
+                return level3OrHigherUnits >= 8 && totalUnits >= 16;
             }
             else if (Type == PlanType.ExtendedMajor)
             {
                 int level3OrHigherUnits = Courses.Where(c => c.Level >= 3).Count() * Course.Units;
-                return level3OrHigherUnits >= 12;
+                return level3OrHigherUnits >= 12 && totalUnits >= 24;
             }
             else if (Type == PlanType.Minor)
             {
                 int level2OrHigherUnits = Courses.Where(c => c.Level >= 2).Count() * Course.Units;
-                return level2OrHigherUnits >= 4;
+                return level2OrHigherUnits >= 4 && totalUnits >= 8;
             } 
             else 
             {
