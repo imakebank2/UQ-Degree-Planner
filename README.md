@@ -3,4 +3,4 @@ Plans your degree to ensure that you meet all your requirements to graduate (not
 
 HUGE work in progress (unfinished)
 
-Made with Blazor
+Made with Blazor + MudBlazor
