@@ -3,4 +3,6 @@ CRUD app that your degree to ensure that you meet all your requirements to gradu
 
 HUGE work in progress (unfinished)
 
+Not made for mobile
+
 Made with Blazor + MudBlazor
