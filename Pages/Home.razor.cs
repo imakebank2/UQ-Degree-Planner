@@ -4,7 +4,8 @@ namespace UQDegreePlanner.Pages;
 public partial class Home
 {
     // Structure: Degree -> listofPlans --> listofCourses
-    public class Program {
+    public class Program 
+    {
         public string Name {set; get;} = "My Program";
         public List<Degree> Degrees {set; get;} = new List<Degree>();
 
@@ -28,7 +29,8 @@ public partial class Home
             return Degrees;
         }
     }
-    public class Degree {
+    public class Degree  
+    {
         public Program? ProgramFrom {set; get;}
         public string Name {set; get;} = string.Empty;
         public List<Plan> Plans {set; get;} = new List<Plan>();
@@ -44,7 +46,7 @@ public partial class Home
         }
     }
 
-    public class Plan
+    public class Plan 
     {
         public Degree? DegreeFrom;
         public string Name {set; get;} = string.Empty;
@@ -94,11 +96,11 @@ public partial class Home
         public Plan? PlanFrom;
 
         [Required]
-        private string courseCode {set; get;} = string.Empty;
+        private string code {set; get;} = string.Empty;
 
-        public string CourseCode {
-            set { courseCode = value.ToUpper().Replace(" ", ""); }
-            get => courseCode;
+        public string Code {
+            set { code = value.ToUpper().Replace(" ", ""); }
+            get => code;
         }
 
         [Required]
@@ -137,20 +139,19 @@ public partial class Home
                 .ToUpper()
                 .Replace(" ", "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(code => new Course { CourseCode = code })
+                .Select(code => new Course { Code = code })
                 .ToList();
         }
 
         // Formats a list of Course objects into a comma-separated list of course codes
         private static string FormatCourses(List<Course> courses) => 
-        string.Join(", ", courses.Select(c => c.CourseCode)); 
+        string.Join(", ", courses.Select(c => c.Code)); 
     }
-    
-    public static bool IsUniqueInList<T>(List<T> list, string value, Func<T, string> selector)   
+
+    public class Semester
     {
-        // ignores case
-        return !list.Any(item =>
-        string.Equals(selector(item), value, StringComparison.OrdinalIgnoreCase));
+        public List<Course> CourseList {get; set;} = new List<Course>();
+        
     }
 
     public static class Limits

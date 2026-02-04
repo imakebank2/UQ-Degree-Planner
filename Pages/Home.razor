@@ -1,7 +1,5 @@
 ﻿@page "/"
 @using System.ComponentModel.DataAnnotations
-@using UQDegreePlanner.Pages
-
 
 <PageTitle>UQ Degree Planner</PageTitle>
 
@@ -13,7 +11,7 @@
 <li>Courses - Subject within a plan (e.g. CSSE1001)</li>
 </MudText>
 
-<MudStack "Row"="true" 
+<MudStack
         Justify="Justify.FlexStart"
         Style="flex-direction: row !important; max-width: 1000px; margin: 1.5rem;">
 
@@ -39,243 +37,324 @@
     <MudTextField 
         @bind-Value="program.Name" 
         Label="Program name" 
-        Immediate="true"
+        Immediate=true
         MaxLength="@Limits.MaxCharacterLength"
     />
 </MudStack>
 
-<MudText Typo="Typo.h3">My program: @program.Name</MudText>
+<MudText Typo="Typo.h3">@program.Name</MudText>
 
 @* Degrees *@
-<MudPaper Style=@Form.FormStyle>
+<MudPaper MaxWidth="@($"{Form.WidthInPixels * 2}px")">
+<MudText Typo="Typo.h6" >Degrees:</MudText>
+    <MudStack Row=true>
+        <MudPaper Style=@Form.FormStyle">
+            <MudForm
+                Model="@degreeInput"
+                @bind-IsValid="@degreeForm.Success">
 
-    <MudForm
-         Model="@customDegree"
-         @bind-IsValid="@degreeForm.Success">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">
+                Add any amount of degrees:
+                </MudText>
 
-        <MudText Typo="Typo.subtitle1" Class="mb-3">
-        Add any amount of degrees:
-        </MudText>
+                <MudTextField T="string"
+                    @bind-Value="degreeInput.Name"
+                    Label="Degree Name"
+                    Required=true
+                    Immediate=true
+                    For="@(() => degreeInput.Name)"
+                    MaxLength="@Limits.MaxCharacterLength" 
+                    Validation="@( (Func<string, string?>)(name =>
+                        {
+                            if (!IsUniqueInList(program.GetAllDegrees(), name, d => d.Name))
+                                return "Name must be unique";
+                            else if (string.IsNullOrWhiteSpace(name))
+                                return "Name is required";
 
-        <MudTextField T="string"
-            @bind-Value="customDegree.Name"
-            Label="Degree Name"
-            Required="true"
-            For="@(() => customDegree.Name)"
-            MaxLength="@Limits.MaxCharacterLength" 
-            Validation="@( (Func<string, string?>)(name =>
+                        return null;
+
+                        }) )" />
+
+                <MudTextField @bind-Value="degreeInput.UnitsRequired"
+                            Label="Units required for the degree"
+                            Required=true
+                            InputType="InputType.Number"
+                            For="@(() => degreeInput.UnitsRequired)" />
+
+                <MudButton ButtonType="ButtonType.Button"
+                Color="Color.Primary"
+                Variant="Variant.Filled"
+                @onclick="AddDegree"
+                Disabled="@(!degreeForm.Success)">
+                        Add Degree
+                </MudButton>
+            </MudForm>
+        </MudPaper>
+
+        <MudPaper MinWidth="@($"{Form.WidthInPixels}px")">
+        <MudText>Degrees: (click to edit/view)</MudText>
+        <MudList T="string">
+                @foreach (Degree degree in program.Degrees)
                 {
-                    if (!IsUniqueInList(program.GetAllDegrees(), name, d => d.Name))
-                        return "Name must be unique";
-                    else if (string.IsNullOrWhiteSpace(name))
-                        return "Name is required";
+                    <MudListItem OnClick="() => EditItem(ref degreeInput, degree)">
+                        <MudButton OnClick="() => DeleteItemFromList(program.Degrees, degree)">
+                            <MudIcon icon=@Icons.Material.Filled.Delete Color=Color.Error Title="Delete!"/>
+                        </MudButton>
+                        @degree.Name
+                    </MudListItem>  
+                }
+                <MudListItem OnClick="() => ResetItem(ref degreeInput)">Reset edit</MudListItem>
+        </MudList>
+    </MudPaper>
 
-                return null;
-
-                }) )" />
-
-        <MudTextField @bind-Value="customDegree.UnitsRequired"
-                    Label="Units required for the degree"
-                    Required="true"
-                    InputType="InputType.Number"
-                    For="@(() => customDegree.UnitsRequired)" />
-
-        <MudButton ButtonType="ButtonType.Button"
-           Color="Color.Primary"
-           Variant="Variant.Filled"
-           @onclick="AddDegree"
-           Disabled="@(!degreeForm.Success)">
-                Add Degree
-        </MudButton>
-
-    </MudForm>
+    </MudStack> 
 </MudPaper>
 
-
 @* Plans *@
-<MudPaper Style=@Form.FormStyle>
+<MudPaper MaxWidth="@($"{Form.WidthInPixels * 2}px")">
+<MudText Typo="Typo.h6" >Plans:</MudText>
+    <MudStack Row=true>
+    <MudPaper Style=@Form.FormStyle>
 
-    <MudForm
-         Model="@customPlan"
-         @bind-IsValid="@planForm.Success">
+        <MudForm
+            Model="@planInput"
+            @bind-IsValid="@planForm.Success">
 
-        <MudText Typo="Typo.subtitle1" Class="mb-3">
-        Add any amount of plans:
-        </MudText>
+            <MudText Typo="Typo.subtitle1" Class="mb-3">
+            Add any amount of plans:
+            </MudText>
 
-        <MudTextField T="string"
-            @bind-Value="customPlan.Name"
-            Label="Plan Name"
-            Required="true"
-            For="@(() => customPlan.Name)"
-            MaxLength="@Limits.MaxCharacterLength" 
-            Validation="@( (Func<string, string?>)(name =>
+            <MudTextField T="string"
+                @bind-Value="planInput.Name"
+                Label="Plan Name"
+                Required=true 
+                Immediate=true
+                For="@(() => planInput.Name)"
+                MaxLength="@Limits.MaxCharacterLength" 
+                Validation="@( (Func<string, string?>)(name =>
+                    {
+                        if (!IsUniqueInList(program.GetAllPlans(), name, p => p.Name))
+                            return "Name must be unique";
+                        else if (string.IsNullOrWhiteSpace(name))
+                            return "Name is required";
+
+                    return null;
+
+                    }) )" />
+
+            <MudSelect @bind-Value="planInput.Type" Label="Select plan type" Placeholder="Please select">
+                <MudSelectItem Value="@Plan.PlanType.Major">Major (16 units with 8 units of courses level 3 or higher)</MudSelectItem>
+                <MudSelectItem Value="@Plan.PlanType.Minor">Minor (8 units with 4 units of courses at level 2 or higher)</MudSelectItem>
+                <MudSelectItem Value="@Plan.PlanType.ExtendedMajor">Extended Major (24 units with 12 units of courses at level 3 or higher)</MudSelectItem>
+                <MudSelectItem Value="@Plan.PlanType.None">None (No specific requirements / for electives)</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect @bind-Value="planInput.DegreeFrom" Label="Which degree is this plan in?" Placeholder="Please Select" Required=true>
+                @foreach (Degree degree in program.GetAllDegrees()) {
+                    <MudSelectItem Value="@degree">@degree.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudButton ButtonType="ButtonType.Button"
+            Color="Color.Primary"
+            Variant="Variant.Filled"
+            @onclick="AddPlan"
+            Disabled="@(!planForm.Success)">
+                    Add Plan
+            </MudButton>
+        </MudForm>
+        </MudPaper>
+
+        <MudPaper MinWidth="@($"{Form.WidthInPixels}px")">
+        <MudText>Plans: (click to edit/view)</MudText>
+        <MudList T="string">
+                @foreach (Plan plan in program.GetAllPlans())
                 {
-                    if (!IsUniqueInList(program.GetAllPlans(), name, p => p.Name))
-                        return "Name must be unique";
-                    else if (string.IsNullOrWhiteSpace(name))
-                        return "Name is required";
+                    <MudListItem OnClick="() => EditItem(ref planInput, plan)">
+                        <MudButton OnClick="() => DeleteItemFromList(plan.DegreeFrom.Plans, plan)">
+                            <MudIcon icon=@Icons.Material.Filled.Delete Color=Color.Error Title="Delete!"/>
+                        </MudButton>
+                        @plan.Name
+                    </MudListItem>  
+                }
+                <MudListItem OnClick="() => ResetItem(ref planInput)">Reset edit</MudListItem>
+        </MudList>
+    </MudPaper>
 
-                return null;
-
-                }) )" />
-
-        <MudSelect @bind-Value="customPlan.Type" Label="Select plan type" Placeholder="Please select">
-            <MudSelectItem Value="@Plan.PlanType.Major">Major (16 units with 8 units of courses level 3 or higher)</MudSelectItem>
-            <MudSelectItem Value="@Plan.PlanType.Minor">Minor (8 units with 4 units of courses at level 2 or higher)</MudSelectItem>
-            <MudSelectItem Value="@Plan.PlanType.ExtendedMajor">Extended Major (24 units with 12 units of courses at level 3 or higher)</MudSelectItem>
-            <MudSelectItem Value="@Plan.PlanType.None">None (No specific requirements / for electives)</MudSelectItem>
-        </MudSelect>
-
-        <MudSelect @bind-Value="customPlan.DegreeFrom" Label="Which degree is this plan in?" Placeholder="Please Select" Required="true">
-            @foreach (Degree degree in program.GetAllDegrees()) {
-                <MudSelectItem Value="@degree">@degree.Name</MudSelectItem>
-            }
-        </MudSelect>
-
-        <MudButton ButtonType="ButtonType.Button"
-           Color="Color.Primary"
-           Variant="Variant.Filled"
-           @onclick="AddPlan"
-           Disabled="@(!planForm.Success)">
-                Add Plan
-        </MudButton>
-
-
-    </MudForm>
+    </MudStack> 
 </MudPaper>
 
 @* Courses *@
-<MudPaper Style=@Form.FormStyle>
+<MudPaper MaxWidth="@($"{Form.WidthInPixels * 2}px")">
+<MudText Typo="Typo.h6" >Courses: </MudText>
+    <MudStack Row=true>
+    <MudPaper Style=@Form.FormStyle>
 
-    <MudForm
-         Model="@customCourse"
-         @bind-IsValid="@courseForm.Success">
+        <MudForm
+            Model="@courseInput"
+            @bind-IsValid="@courseForm.Success">
 
-        <MudText Typo="Typo.subtitle1" Class="mb-3">
-        Add any amount of courses (each course is 2 units [I AM NOT making multi-semester courses]):
-        </MudText>
+            <MudText Typo="Typo.subtitle1" Class="mb-3">
+            Add any amount of courses (each course is 2 units):
+            </MudText>
 
-        <MudTextField @bind-Value="customCourse.Name"
-                    Label="Course Name"
-                    Required="true"
-                    For="@(() => customCourse.Name)"
-                    MaxLength="@Limits.MaxCharacterLength" />
+            <MudTextField @bind-Value="courseInput.Name"
+                        Label="Course Name"
+                        Required=true
+                        Immediate=true
+                        For="@(() => courseInput.Name)"
+                        MaxLength="@Limits.MaxCharacterLength" />
 
-        <MudTextField T="string"
-              @bind-Value="customCourse.CourseCode"
-              Label="Course Code"
-              Required="true"
-              For="@(() => customCourse.CourseCode)"
-              MaxLength="@Limits.MaxCharacterLength"
-              Validation="@( (Func<string, string?>)(code =>
-                {
-                    if (!IsUniqueInList(program.GetAllCourses(), code, c => c.CourseCode))
-                        return "Course code must be unique";
-                    else if (string.IsNullOrWhiteSpace(code))
-                        return "Course code is required";
+            <MudTextField T="string"
+                @bind-Value="courseInput.Code"
+                Label="Course Code"
+                Required=true
+                Immediate=true
+                For="@(() => courseInput.Code)"
+                MaxLength="@Limits.MaxCharacterLength"
+                Validation="@( (Func<string, string?>)(code =>
+                    {
+                        if (!IsUniqueInList(program.GetAllCourses(), code, c => c.Code))
+                            return "Course code must be unique";
+                        else if (string.IsNullOrWhiteSpace(code))
+                            return "Course code is required";
 
-                return null;
+                    return null;
 
-                }) )"
- />
+                    }) )"
+    />
 
 
-        <MudTextField @bind-Value="customCourse.PrequisiteInput"
-                    Label="Prerequisites (course codes separated by commas, e.g. MATH1051,MATH1052)"
-                    Required="false"
-                    For="@(() => customCourse.PrequisiteInput)"
-                    MaxLength="@Limits.MaxCharacterLength"/>
+            <MudTextField @bind-Value="courseInput.PrequisiteInput"
+                        Label="Prerequisites (course codes separated by commas, e.g. MATH1051,MATH1052)"
+                        Required=false
+                        For="@(() => courseInput.PrequisiteInput)"
+                        MaxLength="@Limits.MaxCharacterLength"/>           
 
-        <MudTextField @bind-Value="customCourse.CorequisiteInput"
-                    Label="Corequisities (course codes separated by commas, e.g. MATH1051,MATH1052)"
-                    Required="false"
-                    For="@(() => customCourse.CorequisiteInput)" 
-                    MaxLength="@Limits.MaxCharacterLength" />
-                    
-        <MudTextField @bind-Value="customCourse.IncompatibilityInput"
-                    Label="Incompatibilities (course codes separated by commas, e.g. MATH1051,MATH1052)"
-                    Required="false"
-                    For="@(() => customCourse.IncompatibilityInput)"
-                    MaxLength="@Limits.MaxCharacterLength" />
+            <MudTextField @bind-Value="courseInput.CorequisiteInput"
+                        Label="Corequisities (course codes separated by commas, e.g. MATH1051,MATH1052)"
+                        Required=false
+                        For="@(() => courseInput.CorequisiteInput)" 
+                        MaxLength="@Limits.MaxCharacterLength" />
+                        
+            <MudTextField @bind-Value="courseInput.IncompatibilityInput"
+                        Label="Incompatibilities (course codes separated by commas, e.g. MATH1051,MATH1052)"
+                        Required=false
+                        For="@(() => courseInput.IncompatibilityInput)"
+                        MaxLength="@Limits.MaxCharacterLength" />
 
-        <MudTextField @bind-Value="customCourse.Level"
-                    Label="Level (it is the first digit of the official course code)"
-                    Required="true"
-                    InputType="InputType.Number"
-                    For="@(() => customCourse.Level)" />
+            <MudTextField @bind-Value="courseInput.Level"
+                        Label="Level (it is the first digit of the official course code)"
+                        Required=true
+                        InputType="InputType.Number"
+                        For="@(() => courseInput.Level)" />
 
-        <MudCheckBox @bind-Value="customCourse.IsRequired" Label="Is taking your course strictly required to graduate?" Color="Color.Primary" Class="mt-3" />
+            <MudCheckBox @bind-Value="courseInput.IsRequired" Label="Is taking your course strictly required to graduate?" Color="Color.Primary" Class="mt-3" />
 
-        <MudSelect @bind-Value="customCourse.PlanFrom" Label="Which plan is this course in?" Placeholder="Please Select" Required="true">
-            @foreach (Plan plan in program.GetAllPlans()) {
-                <MudSelectItem Value="@plan">@plan.Name</MudSelectItem>
-            }
-        </MudSelect>
+            <MudSelect @bind-Value="courseInput.PlanFrom" Label="Which plan is this course in?" Placeholder="Please Select" Required=true>
+                @foreach (Plan plan in program.GetAllPlans()) {
+                    <MudSelectItem Value="@plan">@plan.Name</MudSelectItem>
+                }
+            </MudSelect>
 
-        <MudButton ButtonType="ButtonType.Button"
-           Color="Color.Primary"
-           Variant="Variant.Filled"
-           @onclick="AddCourse"
-           Disabled="@(!courseForm.Success)">
-                Add Course
-        </MudButton>
+            <MudButton ButtonType="ButtonType.Button"
+            Color="Color.Primary"
+            Variant="Variant.Filled"
+            @onclick="AddCourse"
+            Disabled="@(!courseForm.Success)">
+                    Add Course
+            </MudButton>
 
-    </MudForm>
+        </MudForm>
+    </MudPaper>
+
+        <MudPaper MinWidth="@($"{Form.WidthInPixels}px")">
+            <MudText>Courses: (click to edit/view)</MudText>
+            <MudList T="string">
+                    @foreach (Course course in program.GetAllCourses())
+                    {
+                        <MudListItem OnClick="() => EditItem(ref courseInput, course)">
+                            <MudButton OnClick="() => DeleteItemFromList(course.PlanFrom.Courses, course)">
+                                <MudIcon icon=@Icons.Material.Filled.Delete Color=Color.Error Title="Delete!"/>
+                            </MudButton>
+                            @($"{course.Name} ({course.Code})")
+                        </MudListItem>  
+                    }
+                    <MudListItem OnClick="() => ResetItem(ref courseInput)">Reset edit</MudListItem> @* My bad about the copy paste*@
+            </MudList>
+        </MudPaper>
+
+    </MudStack> 
 </MudPaper>
-
-<p>CourseList: @string.Join(",",program.GetAllCourses().Select(c => c.CourseCode))</p>
-<p>Haven't added the logic yet but its been so much work bruh</p>
 
 @code {
 
     // Used for form UI
     public class Form {
-        public const string FormStyle = "max-width:800px; margin-top:20px; padding:20px;"; // Style=@formStyle
+        public static readonly string FormStyle = $"width:{WidthInPixels}px; margin-top:20px; padding:20px;"; // Style=@formStyle
         public bool Success {set; get; } = false;
+        public const int WidthInPixels = 700;
     }
     
-    private Form degreeForm = new Form();
-    private Form planForm = new Form();
-    private Form courseForm = new Form();
+    Form degreeForm = new Form();
+    Form planForm = new Form();
+    Form courseForm = new Form();
 
     // Structure: one Program -> listOfDegrees -> listofPlans --> listofCourses
 
     // Only ONE program instance
-    private Program program = new Program();
-    private Degree customDegree = new Degree();
-    private Plan customPlan = new Plan();
-    private Course customCourse = new Course();
-    private int NumberOfSemesters {set; get;} = Limits.MinSemesters;
-    private int NumberOfCourses {set; get;} = 4;
-    private List<Course> Courses {set; get;} = new List<Course>();
+    Program program = new Program();
+    Degree degreeInput = new Degree();
+    Plan planInput = new Plan();
+    Course courseInput = new Course();
+    int NumberOfSemesters {set; get;} = Limits.MinSemesters;
+    int NumberOfCourses {set; get;} = 4;
+    List<Course> Courses {set; get;} = new List<Course>();
 
-    private void AddDegree() {
-        customDegree.ProgramFrom = program;
+    void AddDegree() {
+        degreeInput.ProgramFrom = program;
         
-        if (customDegree.Name != string.Empty) { // <- don't delete this. the form is buggy
-            program.Degrees.Add(customDegree);
+        if (degreeInput.Name != string.Empty) { // <- don't delete this. the form is buggy
+            program.Degrees.Add(degreeInput);
         }
 
-        // Reset
-        customDegree = new Degree();
+        ResetItem(ref degreeInput);
     }
 
-    private void AddPlan() {
+    void AddPlan() {
 
-        if (customPlan.Name != string.Empty) { // <- don't delete this. the form is buggy
-            customPlan.DegreeFrom!.Plans.Add(customPlan);
+        if (planInput.Name != string.Empty) { // <- don't delete this. the form is buggy
+            planInput.DegreeFrom!.Plans.Add(planInput);
         }
 
-        customPlan = new Plan();
+        ResetItem(ref planInput);
     }
 
-    private void AddCourse() {
+    void AddCourse() {
 
-        if (customCourse.CourseCode != string.Empty) { // <- don't delete this. the form is buggy
-            customCourse.PlanFrom!.Courses.Add(customCourse);
+        if (courseInput.Code != string.Empty) { // <- don't delete this. the form is buggy
+            courseInput.PlanFrom!.Courses.Add(courseInput);
         }
 
-        customCourse = new Course();
+        ResetItem(ref courseInput);
+    }
+
+    void DeleteItemFromList<T>(List<T> list, T item) {
+        list.Remove(item);
+    }
+
+    void EditItem<T>(ref T itemInput, T item) {
+        itemInput = item;
+    }
+
+    void ResetItem<T>(ref T itemInput) where T : new() {
+        itemInput = new T();
+    }
+
+    bool IsUniqueInList<T>(List<T> list, string value, Func<T, string> selector)   
+    {
+        // ignores case
+        return !list.Any(item =>
+        string.Equals(selector(item), value, StringComparison.OrdinalIgnoreCase));
     }
 }
