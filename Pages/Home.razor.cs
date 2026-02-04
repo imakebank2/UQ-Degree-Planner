@@ -6,7 +6,7 @@ public partial class Home
     // Structure: Degree -> listofPlans --> listofCourses
     public class Program 
     {
-        public string Name {set; get;} = "My Program";
+        public string Name {set; get;} = String.Empty;
         public List<Degree> Degrees {set; get;} = new List<Degree>();
 
         public List<Course> GetAllCourses()
@@ -80,9 +80,8 @@ public partial class Home
                 case PlanType.None:
                     return true; // No specific requirements for unspecified plan types
                 
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(Type), $"Unknown plan type: {Type}");
             }
+            return false;
         }
         
         public int TotalCourseUnits() => Courses.Count * Course.Units;
@@ -148,10 +147,10 @@ public partial class Home
         string.Join(", ", courses.Select(c => c.Code)); 
     }
 
-    public class Semester
+    public class Semester(string name)
     {
-        public List<Course> CourseList {get; set;} = new List<Course>();
-        
+        public string Name { get; set; } = name;
+        public List<Course> Courses {get; set;} = new List<Course>();
     }
 
     public static class Limits

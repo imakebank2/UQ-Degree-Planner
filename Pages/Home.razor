@@ -11,38 +11,7 @@
 <li>Courses - Subject within a plan (e.g. CSSE1001)</li>
 </MudText>
 
-<MudStack
-        Justify="Justify.FlexStart"
-        Style="flex-direction: row !important; max-width: 1000px; margin: 1.5rem;">
-
-    <MudNumericField 
-        T="int"
-        Label="Number of semesters"
-        @bind-Value="NumberOfSemesters"
-        Min="@Limits.MinSemesters"
-        Max="@Limits.MaxSemesters"
-        Style="@($"width: {Limits.MaxNumericFieldWidthInPixels}px;")" 
-    />
-
-    <MudNumericField 
-        T="int"
-        Label="Courses per semester"
-        @bind-Value="NumberOfCourses"
-        Min="@Limits.MinCoursesPerSemester"
-        Max="@Limits.MaxCoursesPerSemester"
-        Style="@($"width: {Limits.MaxNumericFieldWidthInPixels}px;")" 
-    />
-
-    @* Degree name doesn't matter *@
-    <MudTextField 
-        @bind-Value="program.Name" 
-        Label="Program name" 
-        Immediate=true
-        MaxLength="@Limits.MaxCharacterLength"
-    />
-</MudStack>
-
-<MudText Typo="Typo.h3">@program.Name</MudText>
+<MudTextField Label="Program name" @bind-Value="program.Name" Typo="Typo.h3" MaxLength="@Limits.MaxCharacterLength" />
 
 @* Degrees *@
 <MudPaper MaxWidth="@($"{Form.WidthInPixels * 2}px")">
@@ -171,7 +140,7 @@
                 @foreach (Plan plan in program.GetAllPlans())
                 {
                     <MudListItem OnClick="() => EditItem(ref planInput, plan)">
-                        <MudButton OnClick="() => DeleteItemFromList(plan.DegreeFrom.Plans, plan)">
+                        <MudButton OnClick="() => DeleteItemFromList(plan.DegreeFrom!.Plans, plan)">
                             <MudIcon icon=@Icons.Material.Filled.Delete Color=Color.Error Title="Delete!"/>
                         </MudButton>
                         @plan.Name
@@ -274,7 +243,7 @@
                     @foreach (Course course in program.GetAllCourses())
                     {
                         <MudListItem OnClick="() => EditItem(ref courseInput, course)">
-                            <MudButton OnClick="() => DeleteItemFromList(course.PlanFrom.Courses, course)">
+                            <MudButton OnClick="() => DeleteItemFromList(course.PlanFrom!.Courses, course)">
                                 <MudIcon icon=@Icons.Material.Filled.Delete Color=Color.Error Title="Delete!"/>
                             </MudButton>
                             @($"{course.Name} ({course.Code})")
@@ -286,6 +255,63 @@
 
     </MudStack> 
 </MudPaper>
+
+@* Semesters *@
+
+<MudStack Style="margin: 1.5rem">
+    <MudPaper MaxWidth="@($"{Form.WidthInPixels * 2}px")">
+
+        @foreach (var semester in Semesters)
+{
+    <MudPaper Class="pa-4 ma-2">
+
+        <MudText Typo="Typo.h6">@semester.Name</MudText>
+
+        <MudTable Items="@semester.Courses" Editable="true">
+            <HeaderContent>
+                <MudTh>Code</MudTh>
+                <MudTh>Name</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>
+                    <MudSelect T="string" @bind-Value="context.Code">
+                        @foreach (Course course in program.GetAllCourses()) {
+                            <MudSelectItem Value="@course.Code">@course.Code</MudSelectItem>
+                        }
+                        
+                    </MudSelect>
+                </MudTd>
+                <MudTd>
+                    <MudText>@program.GetAllCourses().FirstOrDefault(c => c.Code == context.Code)?.Name</MudText>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        <MudButton OnClick="@(() => semester.Courses.Add(new Course()))">
+            Add Course
+        </MudButton>
+
+    </MudPaper>
+}
+
+    <MudButton Variant="Variant.Filled" 
+            StartIcon="@Icons.Material.Filled.Add" 
+            Color="Color.Primary"
+            OnClick="AddSemester">
+            Add Semester
+            </MudButton>
+
+    <MudButton Variant="Variant.Filled" 
+            StartIcon="@Icons.Material.Filled.Add" 
+            Color="Color.Primary"
+            OnClick="DeleteSemester"
+            Disabled="!CanDeleteSemester">
+            Delete Semester
+            </MudButton>
+
+    </MudPaper>
+</MudStack>
 
 @code {
 
@@ -307,6 +333,7 @@
     Degree degreeInput = new Degree();
     Plan planInput = new Plan();
     Course courseInput = new Course();
+    List<Semester> Semesters = new List<Semester>();
     int NumberOfSemesters {set; get;} = Limits.MinSemesters;
     int NumberOfCourses {set; get;} = 4;
     List<Course> Courses {set; get;} = new List<Course>();
@@ -338,6 +365,17 @@
 
         ResetItem(ref courseInput);
     }
+
+    void AddSemester() {
+        Semesters.Add(new Semester($"Semester {(Semesters.Count + 1).ToString()}"));
+    }
+
+    void DeleteSemester() {
+        if (CanDeleteSemester) {
+            Semesters.RemoveAt(Semesters.Count - 1); // Remove last element
+        }
+    }
+    bool CanDeleteSemester => Semesters.Count > 0;
 
     void DeleteItemFromList<T>(List<T> list, T item) {
         list.Remove(item);
