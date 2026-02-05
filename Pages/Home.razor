@@ -1,4 +1,8 @@
-﻿@page "/"
+﻿@* I'm sorry to whoever is reading this. It's alright but there is way more copy paste that I would like *@
+@* It's also because I'm not that familiar with web dev and js which is why I chose Blazor (also why would I use javascript). Also its cuz I just want to finish the project it's taken like two weeks (and prob like 50% AI or something) *@
+@* I did learn a ton from this though *@
+
+@page "/"
 @using System.ComponentModel.DataAnnotations
 
 <PageTitle>UQ Degree Planner</PageTitle>
@@ -256,12 +260,12 @@
     </MudStack> 
 </MudPaper>
 
-@* Semesters *@
+@* Semesters Add/Delete *@
 
 <MudStack Style="margin: 1.5rem">
     <MudPaper MaxWidth="@($"{Form.WidthInPixels * 2}px")">
 
-        @foreach (var semester in Semesters)
+        @foreach (var semester in program.Semesters)
 {
     <MudPaper Class="pa-4 ma-2">
 
@@ -271,6 +275,10 @@
             <HeaderContent>
                 <MudTh>Code</MudTh>
                 <MudTh>Name</MudTh>
+                <MudTh>Prerequisites</MudTh>
+                <MudTh>Corequisities</MudTh>
+                <MudTh>Incompatibilities</MudTh>
+                <MudTh>Units</MudTh>
             </HeaderContent>
 
             <RowTemplate>
@@ -285,11 +293,32 @@
                 <MudTd>
                     <MudText>@program.GetAllCourses().FirstOrDefault(c => c.Code == context.Code)?.Name</MudText>
                 </MudTd>
+                <MudTd>
+                    <MudText>@program.GetAllCourses().FirstOrDefault(c => c.Code == context.Code)?.PrequisiteInput</MudText>
+                </MudTd>
+                <MudTd>
+                    <MudText>@program.GetAllCourses().FirstOrDefault(c => c.Code == context.Code)?.CorequisiteInput</MudText>
+                </MudTd>
+                <MudTd>
+                    <MudText>@program.GetAllCourses().FirstOrDefault(c => c.Code == context.Code)?.IncompatibilityInput</MudText>
+                </MudTd>
+                <MudTd>
+                    <MudText>@Course.Units</MudText>
+                </MudTd>
             </RowTemplate>
         </MudTable>
 
         <MudButton OnClick="@(() => semester.Courses.Add(new Course()))">
             Add Course
+        </MudButton>
+        <MudButton OnClick="@(() =>
+            {
+                if (semester.Courses.Count > 0)
+                    semester.Courses.RemoveAt(semester.Courses.Count - 1);
+            }
+            )"
+        Disabled="@(semester.Courses.Count <= 0)">
+            Delete Course
         </MudButton>
 
     </MudPaper>
@@ -313,6 +342,48 @@
     </MudPaper>
 </MudStack>
 
+@* Semester checks *@
+<MudPaper>
+    @if (program.HasDuplicateCoursesTaken()) {
+        <MudText Color="Color.Error">Duplicate courses taken</MudText>
+    }
+    
+    @if (!program.CourseRulesSatisfied(out var courseMsg, program.GetAllCoursesTakenOrdered()))
+    {
+    <MudText Color="Color.Error">@courseMsg</MudText>
+    }
+
+    <MudText Typo=Typo.h6>Degrees: </MudText>
+
+    @foreach (Degree degree in program.GetAllDegrees()) {
+        string message;
+        bool meetsRequirements = degree.MeetsRequirements(out message, program.GetAllCoursesTakenOrdered());
+        if (meetsRequirements) {
+            <MudText Color="Color.Success">@($"Degree - {degree.Name}: {message}")</MudText>
+        } else {
+            <MudText Color="Color.Error">@($"Degree - {degree.Name}: {message}")</MudText>
+        }
+        
+    }
+
+    <MudText Typo=Typo.h6>Plans: </MudText>
+
+    @foreach (Plan plan in program.GetAllPlans()) {
+        string message;
+        bool meetsRequirements = plan.MeetsRequirements(out message, program.GetAllCoursesTakenOrdered());
+        if (meetsRequirements) {
+            <MudText Color=Color.Success>@($"Plan - {plan.Name}: {message}")</MudText>
+        } else {
+            <MudText Color=Color.Error>@($"Plan - {plan.Name}: {message}")</MudText>
+        }
+        
+    }
+
+    @if (EveryRequirementMet()) {
+        <MudText Typo=Typo.h6>YIPPPEEEEE 😀 you should graduate (theoretically)</MudText>
+    }
+</MudPaper>
+
 @code {
 
     // Used for form UI
@@ -333,7 +404,6 @@
     Degree degreeInput = new Degree();
     Plan planInput = new Plan();
     Course courseInput = new Course();
-    List<Semester> Semesters = new List<Semester>();
     int NumberOfSemesters {set; get;} = Limits.MinSemesters;
     int NumberOfCourses {set; get;} = 4;
     List<Course> Courses {set; get;} = new List<Course>();
@@ -341,41 +411,44 @@
     void AddDegree() {
         degreeInput.ProgramFrom = program;
         
-        if (degreeInput.Name != string.Empty) { // <- don't delete this. the form is buggy
+        if (degreeInput.Name != string.Empty) { 
             program.Degrees.Add(degreeInput);
         }
 
         ResetItem(ref degreeInput);
+        degreeForm.Success = false;
     }
 
     void AddPlan() {
 
-        if (planInput.Name != string.Empty) { // <- don't delete this. the form is buggy
+        if (planInput.Name != string.Empty && planInput.DegreeFrom != null) { 
             planInput.DegreeFrom!.Plans.Add(planInput);
         }
 
         ResetItem(ref planInput);
+        planForm.Success = false;
     }
 
     void AddCourse() {
 
-        if (courseInput.Code != string.Empty) { // <- don't delete this. the form is buggy
+        if (courseInput.Code != string.Empty && courseInput.PlanFrom != null) { 
             courseInput.PlanFrom!.Courses.Add(courseInput);
         }
 
         ResetItem(ref courseInput);
+        courseForm.Success = false;
     }
 
     void AddSemester() {
-        Semesters.Add(new Semester($"Semester {(Semesters.Count + 1).ToString()}"));
+        program.Semesters.Add(new Semester(program.Semesters.Count + 1));
     }
 
     void DeleteSemester() {
         if (CanDeleteSemester) {
-            Semesters.RemoveAt(Semesters.Count - 1); // Remove last element
+            program.Semesters.RemoveAt(program.Semesters.Count - 1); // Remove last element
         }
     }
-    bool CanDeleteSemester => Semesters.Count > 0;
+    bool CanDeleteSemester => program.Semesters.Count > 0;
 
     void DeleteItemFromList<T>(List<T> list, T item) {
         list.Remove(item);
@@ -394,5 +467,26 @@
         // ignores case
         return !list.Any(item =>
         string.Equals(selector(item), value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    bool EveryRequirementMet() {
+        // And I met the requirements for finishing this project yippeeeeee
+
+        if (program.HasDuplicateCoursesTaken()) return false;
+        if (!program.CourseRulesSatisfied(out _, program.GetAllCoursesTakenOrdered())) return false;
+
+        foreach (Degree degree in program.GetAllDegrees()) {
+            if (!degree.MeetsRequirements(out _, program.GetAllCoursesTakenOrdered())) {
+                return false;
+            }
+        }
+
+        foreach (Plan plan in program.GetAllPlans()) {
+            if (!plan.MeetsRequirements(out _, program.GetAllCoursesTakenOrdered())) {
+                return false;
+            }
+        }
+
+    return true;
     }
 }
