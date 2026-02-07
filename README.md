@@ -1,6 +1,6 @@
 # UQ (University of Queensland) Degree Planner
 CRUD app that ensures that you meet all your requirements of your degree to graduate (not legally liable for any mistakes). 
-I made it because organizing courses are a PAIN and although this could be (a LOT) better (it is my first web app), I'm pretty happy with the result and I learnt a lot.
+I made it because organizing courses are a PAIN and although this could be (a LOT) better (it is my first web app), I'm pretty happy with the result and I learnt a ton.
 
 Broken on mobile because WHO KNOWS 🤔🤔🤔🤔🤔🤔❓❓❓❓❓❓.
 
