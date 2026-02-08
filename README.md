@@ -1,7 +1,7 @@
 # UQ (University of Queensland) Degree Planner
 CRUD app that ensures that you meet all your requirements of your degree to graduate (not legally liable for any mistakes). 
-I made it because organizing courses are a PAIN and although this could be (a LOT) better (it is my first web app), I'm pretty happy with the result and I learnt a ton.
+I made it because organizing courses are frustrating and although this could have been a lot better (it is my first web app), I'm pretty happy with the result and I learnt a ton.
 
-Broken on mobile because WHO KNOWS 🤔🤔🤔🤔🤔🤔❓❓❓❓❓❓.
+Intended for desktop browsers.
 
-Made with Blazor WASM + MudBlazor (debugging was awful I should have just used js).
+Made with Blazor WASM + MudBlazor.
